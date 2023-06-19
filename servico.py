@@ -85,7 +85,7 @@ class BrokerService(rpyc.Service):
     def start_console_input():
         broker_service = BrokerService()
         while True:
-            user_input = input("Enter 'create_topic' command: ")
+            user_input = input("Enter 'create_topic' command followed by the topic to be created: ")
             if user_input.strip() == "exit":
                 break
             broker_service.handle_console_input(user_input)

@@ -9,8 +9,10 @@ class Client:
         result = self.client.exposed_login(self.user_id)
         if result:
             print("Login successful.")
+            return True
         else:
             print("Login failed.")
+            return False
 
     def publish(self):
         topic = input("Enter the topic to publish: ")
@@ -43,6 +45,7 @@ class Client:
 
     def notification_callback(self, contents):
         for content in contents:
+            print (content)
             print(f"Received notification: Topic='{content.topic}', Author='{content.author}', Data='{content.data}'")
 
 def main():
@@ -50,10 +53,14 @@ def main():
     server_port = 12345  # Update with the actual server port
     user_id = input("Enter your user ID: ")
 
-    client = Client(server_address, server_port, user_id)
-
     # Login
-    client.login()
+    while True:
+        client = Client(server_address, server_port, user_id)
+        if client.login():
+            break
+        else:
+            user_id = input("Enter your user ID: ")
+            continue
 
     while True:
         print("\nMenu:")
