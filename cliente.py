@@ -1,4 +1,6 @@
+import pickle
 import rpyc
+from servico import Content
 
 class Client:
     def __init__(self, server_address, server_port, user_id):
@@ -45,8 +47,11 @@ class Client:
 
     def notification_callback(self, contents):
         for content in contents:
-            print (content)
-            print(f"Received notification: Topic='{content.topic}', Author='{content.author}', Data='{content.data}'")
+            deserialized_content = pickle.loads(content)
+            if isinstance(deserialized_content, Content):
+                print(f"Received notification: Topic='{deserialized_content.topic}', Author='{deserialized_content.author}', Data='{deserialized_content.data}'")
+            else:
+                print("Invalid content object")
 
 def main():
     server_address = "localhost"  # Update with the actual server address

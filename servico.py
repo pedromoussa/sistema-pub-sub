@@ -1,11 +1,13 @@
 import rpyc
 import threading
+import pickle
 from rpyc.utils.server import ThreadedServer
-from typing import Callable, List
+from typing import Callable, List, TypeAlias
 from dataclasses import dataclass
 
-UserId = str
-Topic = str
+UserId: TypeAlias = str
+
+Topic: TypeAlias = str
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class Content:
@@ -13,7 +15,7 @@ class Content:
     topic: Topic
     data: str
 
-FnNotify = Callable[[List[Content]], None]
+FnNotify: TypeAlias = Callable[[list[Content]], None]
 
 class BrokerGlobals:
     topics = {}
@@ -44,8 +46,9 @@ class BrokerService(rpyc.Service):
         if topic not in BrokerGlobals.topics:
             return False
         content = Content(author=user_id, topic=topic, data=data)
-        BrokerGlobals.topics[topic].append(content)
-        self._notify_subscribers(topic, [content])
+        serialized_content = pickle.dumps(content)
+        BrokerGlobals.topics[topic].append(serialized_content)
+        self._notify_subscribers(topic, [serialized_content])
         return True
 
     def exposed_subscribe_to(self, user_id: UserId, topic: Topic, callback: FnNotify) -> bool:
@@ -79,7 +82,12 @@ class BrokerService(rpyc.Service):
 
     def _send_previous_ads(self, user_id: UserId, topic: Topic, callback: FnNotify) -> None:
         if topic in BrokerGlobals.topics:
+            # print(f"Sending previous ads for topic '{topic}' to user '{user_id}'")
+            # contents = BrokerGlobals.topics[topic]
+            # print(f"Contents: {contents}")
             callback(BrokerGlobals.topics[topic])
+        # else:
+        #     print(f"No previous ads found for topic '{topic}'")
 
     @staticmethod
     def start_console_input():
