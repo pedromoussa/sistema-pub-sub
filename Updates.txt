@@ -6,7 +6,7 @@ criacao de topicos melhorada
 
 Problemas:
 
-    - quando um usuario publica, no momento em que outro se inscreve naquele topico,
+    - (consertado) quando um usuario publica, no momento em que outro se inscreve naquele topico,
 ocorre um erro em 'notification_callback'. O content é recebido, mas não pode ser lido pela funcao (pode ser impresso num print)
 
     - se o usuario ja era inscrito antes, ocorre outro erro no callback (timeout na linha 20 de cliente.py - 
