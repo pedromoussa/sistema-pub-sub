@@ -38,6 +38,7 @@ class Subscriber(threading.Thread):
         return self.server.exposed_list_topics()
 
     def show_ads(self):
+        self.server.exposed_list_topics()
         if self.ads_queue.empty() == False:
             while self.ads_queue.empty() == False:
                 ad = self.ads_queue.get()
