@@ -82,7 +82,15 @@ class BrokerService(rpyc.Service):
                 for sub in subscriptions:
                     if sub == topic:
                         callback = BrokerGlobals.user_callbacks[user_id]
-                        callback(contents)
+                        # Create a new thread for each callback invocation
+                        threading.Thread(target=self._invoke_callback, args=(callback, contents)).start()
+
+    @staticmethod
+    def _invoke_callback(callback: FnNotify, contents: List[Content]) -> None:
+        try:
+            callback(contents)
+        except Exception as e:
+            print(f"Error occurred during callback execution: {e}")
 
     def _send_previous_ads(self, user_id: UserId, topic: Topic) -> None:
         if topic in BrokerGlobals.topics:
@@ -91,7 +99,7 @@ class BrokerService(rpyc.Service):
                 previous_ads.append(content)
             if previous_ads:
                 callback = BrokerGlobals.user_callbacks[user_id]
-                callback(previous_ads)
+                threading.Thread(target=self._invoke_callback, args=(callback, previous_ads)).start()
 
     @staticmethod
     def start_console_input():
