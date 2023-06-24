@@ -1,10 +1,10 @@
+import signal
 import rpyc
 import threading
 import pickle
 from rpyc.utils.server import ThreadedServer
 from typing import Callable, List, TypeAlias
 from dataclasses import dataclass
-from queue import Queue
 
 UserId: TypeAlias = str
 Topic: TypeAlias = str
@@ -25,13 +25,15 @@ class BrokerGlobals:
     user_callbacks = {}
 
 class BrokerService(rpyc.Service):
+    running = True
+
     def create_topic(self, user_id: UserId, topic_name: str) -> Topic:
         if user_id != BrokerGlobals.admin_id:
-            return "Only the admin can create topics."
+            return "Apenas o Administrador pode criar tópicos."
         if topic_name in BrokerGlobals.topics:
-            return "Topic already exists."
+            return "Tópico já existente."
         BrokerGlobals.topics[topic_name] = []
-        return f"Topic '{topic_name}' created successfully."
+        return f"Tópico '{topic_name}' criado com sucesso."
 
     def exposed_login(self, user_id: UserId, callback: FnNotify) -> bool:
         if user_id in BrokerGlobals.subscribers:
@@ -82,7 +84,7 @@ class BrokerService(rpyc.Service):
                 for sub in subscriptions:
                     if sub == topic:
                         callback = BrokerGlobals.user_callbacks[user_id]
-                        # Create a new thread for each callback invocation
+                        # Cria nova thread para cada chamada do callback
                         threading.Thread(target=self._invoke_callback, args=(callback, contents)).start()
 
     @staticmethod
@@ -90,7 +92,7 @@ class BrokerService(rpyc.Service):
         try:
             callback(contents)
         except Exception as e:
-            print(f"Error occurred during callback execution: {e}")
+            print(f"Ocorreu um erro durante a execução do callback: {e}")
 
     def _send_previous_ads(self, user_id: UserId, topic: Topic) -> None:
         if topic in BrokerGlobals.topics:
@@ -102,11 +104,12 @@ class BrokerService(rpyc.Service):
                 threading.Thread(target=self._invoke_callback, args=(callback, previous_ads)).start()
 
     @staticmethod
-    def start_console_input():
+    def start_console_input(exit_event: threading.Event):
         broker_service = BrokerService()
-        while True:
-            user_input = input("Enter 'create_topic' command followed by the topic to be created: ")
+        while not exit_event.is_set():
+            user_input = input("Digite 'create_topic' seguido pelo tópico que deseja criar ou 'exit' para sair: ")
             if user_input.strip() == "exit":
+                exit_event.set()
                 break
             broker_service.handle_console_input(user_input)
 
@@ -114,15 +117,26 @@ class BrokerService(rpyc.Service):
         command, *args = user_input.split()
         if command == "create_topic":
             self.create_topic(BrokerGlobals.admin_id, *args)
-            
-if __name__ == '__main__':
-    server = ThreadedServer(BrokerService, port=12345)
-    server_thread = threading.Thread(target=server.start)
-    # Start the server thread
-    server_thread.start()
-    
-    # Start the console input loop
-    threading.Thread(target=BrokerService.start_console_input).start()
 
-    # Wait for the server thread to finish (optional)
+    @staticmethod
+    def stop_server(signal, frame):
+        print("Finalizando Broker...")
+        rpyc.ThreadedServer.stop_all()
+
+if __name__ == '__main__':
+    exit_event = threading.Event()
+    server = ThreadedServer(BrokerService, port=12345)
+    signal.signal(signal.SIGINT, BrokerService.stop_server)
+    server_thread = threading.Thread(target=server.start)
+    # Inicia thread servidor
+    server_thread.start()
+
+    # Inicia loop de input do terminal
+    threading.Thread(target=BrokerService.start_console_input, args=(exit_event,)).start()
+
+    # Aguarda o evento de saída ser acionado
+    exit_event.wait()
+
+    # Encerra o servidor e aguarda a thread do servidor terminar
+    server.close()
     server_thread.join()

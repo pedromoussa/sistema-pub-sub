@@ -13,7 +13,7 @@ class Publisher:
         return self.server.exposed_publish(self.user_id, topic, content)
 
     def notification_callback(self, contents):
-        # This method will not be used in the Publisher class
+        # Metodo não vai ser utilizado na classe Publisher
         pass
 
 
@@ -25,7 +25,7 @@ class Subscriber(threading.Thread):
         self.ads_queue = Queue()
 
     def run(self):
-        # No need to log in here since it's already done by the client
+        # Não é necessário login pois já é feito pelo client
         pass
 
     def subscribe_to(self, topic):
@@ -41,9 +41,9 @@ class Subscriber(threading.Thread):
         if self.ads_queue.empty() == False:
             while self.ads_queue.empty() == False:
                 ad = self.ads_queue.get()
-                print(f"Received notification: Topic='{ad.topic}', Author='{ad.author}', Data='{ad.data}'")
+                print(f"Notificação recebida: Tópico='{ad.topic}', Autor='{ad.author}', Conteúdo='{ad.data}'")
         else:
-            print("No new notifications")
+            print("Não há novas notificações.")
 
     def notification_callback(self, contents):
         for content in contents:
@@ -51,7 +51,7 @@ class Subscriber(threading.Thread):
             if isinstance(deserialized_content, Content):
                 self.ads_queue.put(deserialized_content)
             else:
-                print("Invalid content object")
+                print("Content object inválido")
 
 
 class Client:
@@ -64,7 +64,7 @@ class Client:
         self.connection = None
 
     def login(self):
-        self.user_id = input("Enter your user ID: ")
+        self.user_id = input("Digite seu ID de usuário: ")
 
         self.connection = rpyc.connect(self.server_address, self.server_port)
         self.publisher = Publisher(self.connection.root, self.user_id)
@@ -73,76 +73,76 @@ class Client:
 
         result = self.connection.root.exposed_login(self.user_id, self.subscriber.notification_callback)
         if result:
-            print("Login successful.")
+            print("Login realizado com sucesso.")
             return True
         else:
-            print("Login failed.")
+            print("Não foi feito o login.")
             return False
 
     def publish(self, topic, content):
         if self.publisher:
             result = self.publisher.publish(topic, content)
             if result:
-                print("Ad published successfully.")
+                print("Anuncio publicado com sucesso.")
             else:
-                print("Failed to publish ad.")
+                print("Falhou na publicação do anuncio.")
         else:
-            print("Not logged in.")
+            print("Não foi feito o login.")
 
     def subscribe_to(self, topic):
         if self.subscriber:
             result = self.subscriber.subscribe_to(topic)
             if result:
-                print("Subscribed to topic successfully.")
+                print("Subscreveu no tópico com sucesso.")
             else:
-                print("Failed to subscribe to topic.")
+                print("Falhou em se subscrever no tópico.")
         else:
-            print("Not logged in.")
+            print("Não foi feito o login.")
 
     def unsubscribe_to(self, topic):
         if self.subscriber:
             result = self.subscriber.unsubscribe_to(topic)
             if result:
-                print("Unsubscribed from topic successfully.")
+                print("Desinscreveu do tópico com sucesso.")
             else:
-                print("Failed to unsubscribe from topic.")
+                print("Falhou em se desinscrever do tópico.")
         else:
-            print("Not logged in.")
+            print("Não foi feito o login.")
 
     def list_topics(self):
         if self.subscriber:
             topics = self.subscriber.list_topics()
-            print("Available topics:", topics)
+            print("Tópicos disponíveis:", topics)
         else:
-            print("Not logged in.")
+            print("Não foi feito o login.")
 
     def show_ads(self):
         if self.subscriber:
             self.subscriber.show_ads()
         else:
-            print("Not logged in.")
+            print("Não foi feito o login.")
 
     def main_menu(self):
         while True:
             print("\nMenu:")
-            print("1. Publish an ad")
-            print("2. Subscribe to a topic")
-            print("3. Unsubscribe from a topic")
-            print("4. List topics")
-            print("5. Show ads")
-            print("6. Exit")
+            print("1. Publicar um anuncio")
+            print("2. Subscrever em um tópico")
+            print("3. Desinscrever de um tópico")
+            print("4. Listar tópicos")
+            print("5. Mostrar anuncios")
+            print("6. Sair")
 
-            choice = input("Enter your choice (1-6): ")
+            choice = input("Digite sua escolha (1-6): ")
 
             if choice == "1":
-                topic = input("Enter the topic to publish: ")
-                content = input("Enter the content: ")
+                topic = input("Digite o tópico a ser publicado: ")
+                content = input("Digite o conteúdo: ")
                 self.publish(topic, content)
             elif choice == "2":
-                topic = input("Enter the topic to subscribe: ")
+                topic = input("Digite o tópico para se subscrever: ")
                 self.subscribe_to(topic)
             elif choice == "3":
-                topic = input("Enter the topic to unsubscribe: ")
+                topic = input("Digite o tópico para de desinscrever: ")
                 self.unsubscribe_to(topic)
             elif choice == "4":
                 self.list_topics()
@@ -151,18 +151,17 @@ class Client:
             elif choice == "6":
                 break
             else:
-                print("Invalid choice. Please try again.")
+                print("Escolha inválida. Tente novamente.")
 
-        # Signal the end of processing ads
         if self.subscriber:
-            self.subscriber.ads_queue.put("END")
+            self.subscriber.ads_queue.put("FIM")
             self.subscriber.join()
 
-        print("Exiting...")
+        print("Encerrando...")
 
 def main():
-    server_address = "localhost"  # Update with the actual server address
-    server_port = 12345  # Update with the actual server port
+    server_address = "localhost"
+    server_port = 12345
 
     client = Client(server_address, server_port)
     if client.login():
