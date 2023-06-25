@@ -37,10 +37,18 @@ class BrokerService(rpyc.Service):
 
     def exposed_login(self, user_id: UserId, callback: FnNotify) -> bool:
         if user_id in BrokerGlobals.subscribers:
-            return False
-        BrokerGlobals.subscribers[user_id] = []
-        BrokerGlobals.connections[user_id] = self._conn
+            if BrokerGlobals.connections.get(user_id):
+                return False
+            BrokerGlobals.connections[user_id] = self._conn
+        else:
+            BrokerGlobals.subscribers[user_id] = []
+            BrokerGlobals.connections[user_id] = self._conn
+        # Atualiza callback do usuario
         BrokerGlobals.user_callbacks[user_id] = callback
+
+        for topic in BrokerGlobals.subscribers[user_id]:
+            self._send_previous_ads(user_id, topic)
+
         return True
 
     def exposed_list_topics(self) -> List[Topic]:
