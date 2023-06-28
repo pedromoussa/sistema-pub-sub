@@ -4,6 +4,7 @@ from servico import Content
 import threading
 from queue import Queue
 
+#Componente "Publisher"
 class Publisher:
     def __init__(self, server, user_id):
         self.server = server
@@ -12,11 +13,7 @@ class Publisher:
     def publish(self, topic, content):
         return self.server.exposed_publish(self.user_id, topic, content)
 
-    def notification_callback(self, contents):
-        # Metodo não vai ser utilizado na classe Publisher
-        pass
-
-
+#Componente "Subscriber"
 class Subscriber(threading.Thread):
     def __init__(self, server, user_id):
         threading.Thread.__init__(self)
@@ -25,7 +22,6 @@ class Subscriber(threading.Thread):
         self.ads_queue = Queue()
 
     def run(self):
-        # Não é necessário login pois já é feito pelo client
         pass
 
     def subscribe_to(self, topic):
@@ -38,6 +34,7 @@ class Subscriber(threading.Thread):
         return self.server.exposed_list_topics()
 
     def show_ads(self):
+        self.list_topics()
         if self.ads_queue.empty() == False:
             while self.ads_queue.empty() == False:
                 ad = self.ads_queue.get()
@@ -52,6 +49,7 @@ class Subscriber(threading.Thread):
                 self.ads_queue.put(deserialized_content)
             else:
                 print("Content object inválido")
+        return
 
 
 class Client:
