@@ -1,8 +1,36 @@
-import pickle
+from __future__ import annotations
+# Se não funcionar no lab rode:
+# $ pip install --user typing_extensions
+from typing import Callable, TYPE_CHECKING
+from dataclasses import dataclass
+import sys
 import rpyc
-from servico import Content
 import threading
 from queue import Queue
+
+IS_NEW_PYTHON: bool = sys.version_info >= (3, 8)
+if IS_NEW_PYTHON:
+    from typing import TypeAlias
+else:
+    from typing_extensions import TypeAlias
+
+UserId: TypeAlias = str
+Topic: TypeAlias = str
+
+# Isso é para ser tipo uma struct
+# Frozen diz que os campos são read-only
+if IS_NEW_PYTHON:
+    @dataclass(frozen=True, kw_only=True, slots=True)
+    class Content:
+        author: UserId
+        topic: Topic
+        data: str
+elif not TYPE_CHECKING:
+    @dataclass(frozen=True)
+    class Content:
+        author: UserId
+        topic: Topic
+        data: str
 
 #Componente "Publisher"
 class Publisher:
@@ -44,11 +72,7 @@ class Subscriber(threading.Thread):
 
     def notification_callback(self, contents):
         for content in contents:
-            deserialized_content = pickle.loads(content)
-            if isinstance(deserialized_content, Content):
-                self.ads_queue.put(deserialized_content)
-            else:
-                print("Content object inválido")
+            self.ads_queue.put(content)
         return
 
 
@@ -72,6 +96,7 @@ class Client:
         result = self.connection.root.exposed_login(self.user_id, self.subscriber.notification_callback)
         if result:
             print("Login realizado com sucesso.")
+            bgsrv = rpyc.BgServingThread(self.connection)
             return True
         else:
             print("Não foi feito o login.")
@@ -158,8 +183,8 @@ class Client:
         print("Encerrando...")
 
 def main():
-    server_address = "localhost"
-    server_port = 12345
+    server_address = "10.11.0.10"
+    server_port = 10001
 
     client = Client(server_address, server_port)
     if client.login():

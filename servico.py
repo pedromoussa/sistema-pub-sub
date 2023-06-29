@@ -2,7 +2,6 @@ from __future__ import annotations
 import signal
 import rpyc
 import threading
-import pickle
 from rpyc.utils.server import ThreadedServer
 from typing import Callable, TYPE_CHECKING
 from dataclasses import dataclass
@@ -79,7 +78,7 @@ class BrokerService(rpyc.Service):
         if topic not in BrokerGlobals.topics:
             return False
         content = Content(author=user_id, topic=topic, data=data)
-        serialized_content = pickle.dumps(content)
+        serialized_content = content
         BrokerGlobals.topics[topic].append(serialized_content)
         self._notify_subscribers(topic, [serialized_content])
         return True
@@ -154,7 +153,7 @@ class BrokerService(rpyc.Service):
 
 if __name__ == '__main__':
     exit_event = threading.Event()
-    server = ThreadedServer(BrokerService, port=12345)
+    server = ThreadedServer(BrokerService, port=10001, protocol_config={'allow_public_attrs':True})
     signal.signal(signal.SIGINT, BrokerService.stop_server)
     server_thread = threading.Thread(target=server.start)
     # Inicia thread servidor
