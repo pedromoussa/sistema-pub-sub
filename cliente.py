@@ -62,7 +62,7 @@ class Subscriber(threading.Thread):
         return self.server.exposed_list_topics()
 
     def show_ads(self):
-        self.list_topics()
+        #self.list_topics()
         if self.ads_queue.empty() == False:
             while self.ads_queue.empty() == False:
                 ad = self.ads_queue.get()
@@ -183,7 +183,7 @@ class Client:
         print("Encerrando...")
 
 def main():
-    server_address = "10.11.0.10"
+    server_address = "localhost"
     server_port = 10001
 
     client = Client(server_address, server_port)

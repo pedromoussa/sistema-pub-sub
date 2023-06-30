@@ -86,9 +86,12 @@ class BrokerService(rpyc.Service):
     def exposed_subscribe_to(self, user_id: UserId, topic: Topic) -> bool:
         if topic not in BrokerGlobals.topics:
             return False
-        BrokerGlobals.subscribers[user_id].append(topic)
-        self._send_previous_ads(user_id, topic)
-        return True
+        if topic not in BrokerGlobals.subscribers[user_id]:
+            BrokerGlobals.subscribers[user_id].append(topic)
+            self._send_previous_ads(user_id, topic)
+            return True
+        else:
+            return False
 
     def exposed_unsubscribe_to(self, user_id: UserId, topic: Topic) -> bool:
         if topic not in BrokerGlobals.topics:
